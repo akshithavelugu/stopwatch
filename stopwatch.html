@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch & Clock App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .time-display {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center space-y-8 border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-6 tracking-tight">
+            Time Master
+        </h1>
+
+        <div id="message-box" class="min-h-[24px] text-sm text-green-600 font-medium transition-opacity duration-300 opacity-0">
+        </div>
+
+        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-2">Current Time</h2>
+            <div id="current-time" class="text-5xl font-bold time-display">
+                00:00:00
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-purple-500 to-pink-600 text-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold mb-2">Stopwatch</h2>
+            <div id="stopwatch-display" class="text-5xl font-bold time-display mb-6">
+                00:00:00.000
+            </div>
+            <div class="flex justify-center space-x-4">
+                <button id="start-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">
+                    Start
+                </button>
+                <button id="stop-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300" disabled>
+                    Stop
+                </button>
+                <button id="reset-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300" disabled>
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentTimeDisplay = document.getElementById('current-time');
+        const stopwatchDisplay = document.getElementById('stopwatch-display');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const messageBox = document.getElementById('message-box');
+
+        let clockInterval;
+
+        let startTime = 0;
+        let elapsedTime = 0;
+        let isRunning = false;
+        let stopwatchInterval;
+
+
+        function formatTwoDigits(num) {
+            return num < 10 ? '0' + num : num;
+        }
+
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.classList.remove('opacity-0');
+            messageBox.classList.add('opacity-100');
+
+            messageBox.classList.remove('text-green-600', 'text-red-600', 'text-blue-600');
+
+            if (type === 'success') {
+                messageBox.classList.add('text-green-600');
+            } else if (type === 'error') {
+                messageBox.classList.add('text-red-600');
+            } else {
+                messageBox.classList.add('text-blue-600');
+            }
+
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const hours = formatTwoDigits(now.getHours());
+            const minutes = formatTwoDigits(now.getMinutes());
+            const seconds = formatTwoDigits(now.getSeconds());
+            currentTimeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function startClock() {
+            updateClock();
+            clockInterval = setInterval(updateClock, 1000);
+        }
+
+        function formatStopwatchTime(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            const milliseconds = ms % 1000;
+
+            return `${formatTwoDigits(hours)}:${formatTwoDigits(minutes)}:${formatTwoDigits(seconds)}.${String(milliseconds).padStart(3, '0')}`;
+        }
+
+        function updateStopwatch() {
+            elapsedTime = Date.now() - startTime;
+            stopwatchDisplay.textContent = formatStopwatchTime(elapsedTime);
+        }
+
+        function startStopwatch() {
+            if (!isRunning) {
+                isRunning = true;
+                startTime = Date.now() - elapsedTime;
+                stopwatchInterval = setInterval(updateStopwatch, 10);
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                resetBtn.disabled = false;
+                showMessage('Stopwatch started!', 'success');
+            }
+        }
+
+        function stopStopwatch() {
+            if (isRunning) {
+                isRunning = false;
+                clearInterval(stopwatchInterval);
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                showMessage('Stopwatch paused.', 'info');
+            }
+        }
+
+        function resetStopwatch() {
+            if (isRunning) {
+                stopStopwatch();
+            }
+            elapsedTime = 0;
+            stopwatchDisplay.textContent = '00:00:00.000';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = true;
+            showMessage('Stopwatch reset.', 'info');
+        }
+
+        startBtn.addEventListener('click', startStopwatch);
+        stopBtn.addEventListener('click', stopStopwatch);
+        resetBtn.addEventListener('click', resetStopwatch);
+
+        window.onload = function() {
+            startClock();
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = true;
+        };
+    </script>
+</body>
+</html>
